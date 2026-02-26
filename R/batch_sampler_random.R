@@ -3,6 +3,7 @@ batch_sampler_random <- function(batch_size, shuffle=TRUE){
   ## Above for CRAN check.
   torch::sampler(
     "RandomSampler",
+    inherit = BatchSamplerBase,
     initialize = function(data_source) {
       self$N <- data_source$task$nrow
       self$batch_vec <- seq_len(self$N) %/% batch_size
@@ -19,23 +20,6 @@ batch_sampler_random <- function(batch_size, shuffle=TRUE){
         seq_len(self$N)
       }
       self$batch_list <- split(index_vec, self$batch_vec)
-    },
-    .iter = function() {
-      batch.i <- 0
-      function() {
-        if (batch.i < length(self$batch_list)) {
-          batch.i <<- batch.i + 1L
-          indices <- self$batch_list[[batch.i]]
-          if (batch.i == length(self$batch_list)) {
-            self$set_batch_list()
-          }
-          return(indices)
-        }
-        coro::exhausted()
-      }
-    },
-    .length = function() {
-      length(self$batch_list)
     }
   )
 }

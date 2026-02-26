@@ -3,6 +3,7 @@ batch_sampler_stratified <- function(min_samples_per_stratum, shuffle=TRUE){
   ## Above for CRAN check.
   torch::sampler(
     "StratifiedSampler",
+    inherit = BatchSamplerBase,
     initialize = function(data_source) {
       self$data_source <- data_source
       TSK <- data_source$task
@@ -41,23 +42,6 @@ batch_sampler_stratified <- function(min_samples_per_stratum, shuffle=TRUE){
       self$batch_sizes <- sapply(self$batch_list, length)
       self$batch_size_tab <- sort(table(self$batch_sizes))
       self$batch_size <- as.integer(names(self$batch_size_tab)[length(self$batch_size_tab)])
-    },
-    .iter = function() {
-      batch.i <- 0
-      function() {
-        if (batch.i < length(self$batch_list)) {
-          batch.i <<- batch.i + 1L
-          indices <- self$batch_list[[batch.i]]
-          if (batch.i == length(self$batch_list)) {
-            self$set_batch_list()
-          }
-          return(indices)
-        }
-        coro::exhausted()
-      }
-    },
-    .length = function() {
-      length(self$batch_list)
     }
   )
 }
