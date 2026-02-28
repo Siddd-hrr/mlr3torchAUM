@@ -15,25 +15,40 @@ all_pairs_squared_hinge_loss = function(pred, label, margin=1){
   if(!any(is_pos_r) || !any(is_neg_r)){
     return(torch::torch_sum(pred*0))
   }
+  
+  ## Sort positives by score to use cumsum for the sums above.
+  pos_scores = pred[torch::torch_tensor(which(is_pos_r), dtype=torch::torch_long())]
+  neg_scores = pred[torch::torch_tensor(which(is_neg_r), dtype=torch::torch_long())]
   ## Sort ascending by score.
-  sorted_idx = torch::torch_argsort(pred$detach())
-  pred_s = pred[sorted_idx]
-  is_pos_s = torch::torch_tensor(
-    as.numeric(is_pos_r[as.integer(sorted_idx)]),
-    dtype=pred$dtype, device=pred$device)
-  is_neg_s = 1 - is_pos_s
+  pos_sorted = pos_scores[torch::torch_argsort(pos_scores$detach())]
+  n_pos = pos_sorted$shape[1]
   ## z = (margin - score) for positives (0 for negatives).
   ## Quadratic coefficients: a=1, b=2*z, c=z^2 per positive.
-  z = (margin - pred_s)*is_pos_s
-  cum_a = torch::torch_cumsum(is_pos_s, dim=1)
-  cum_b = torch::torch_cumsum(2*z, dim=1)
-  cum_c = torch::torch_cumsum(z*z, dim=1)
+  pos_cumsum1 = torch::torch_cumsum(pos_sorted, dim=1)            #sum of pos scores
+  pos_cumsum2 = torch::torch_cumsum(pos_sorted*pos_sorted, dim=1) #sum of pos scores^2
+  ## For each negative, find how many positives have score < neg + margin.
+  ## threshold = neg + margin; count = searchsorted result.
+  thresholds = neg_scores$detach() + margin
+  k_idx = torch::torch_searchsorted(
+    pos_sorted$detach()$contiguous(),
+    thresholds$contiguous(),
+    right=FALSE)
+  zero_scalar = torch::torch_zeros(1L, dtype=pred$dtype, device=pred$device)
+  k_float = k_idx$to(dtype=pred$dtype)
   ## Shift left by one: each negative uses only positives ranked below it.
-  zero = torch::torch_zeros(1L, dtype=pred$dtype, device=pred$device)
-  a_prev = torch::torch_cat(c(zero, cum_a[1:(n-1)]))
-  b_prev = torch::torch_cat(c(zero, cum_b[1:(n-1)]))
-  c_prev = torch::torch_cat(c(zero, cum_c[1:(n-1)]))
+  k_clamped = torch::torch_clamp(k_idx, min=1L)
+  sum_pos = torch::torch_where(
+    k_idx == 0L,
+    zero_scalar$expand_as(neg_scores),
+    pos_cumsum1[k_clamped])
+  sum_sq = torch::torch_where(
+    k_idx == 0L,
+    zero_scalar$expand_as(neg_scores),
+    pos_cumsum2[k_clamped])
+  neg2 = neg_scores*neg_scores
   ## Sum of contributions from negatives only (positives are masked to zero).
-  contrib = is_neg_s*(a_prev*pred_s*pred_s + b_prev*pred_s + c_prev)
+  contrib = neg2*k_float +
+    neg_scores*2*(k_float*margin - sum_pos) +
+    (k_float*margin*margin - 2*margin*sum_pos + sum_sq)
   torch::torch_sum(contrib)
 }
