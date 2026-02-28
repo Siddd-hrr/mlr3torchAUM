@@ -39,7 +39,7 @@ if(torch::torch_is_installed()){
   })
 
   test_that("loss should be equal to naive O(N^2) algorithm on two positives & two negatives", {
-    pred = torch::torch_tensor(c(0.3, 0.8, 0.6, 0.1))
+    pred = torch::torch_tensor(c(0.3, 0.8, 0.6, 0.1), dtype=torch::torch_double())
     label = c(1L, 1L, -1L, -1L)
     expect_equal(
       torch::as_array(all_pairs_squared_hinge_loss(pred, label)),
@@ -50,7 +50,7 @@ if(torch::torch_is_installed()){
     set.seed(1)
     for(trial in seq_len(5)){
       n = sample(4:10, 1)
-      pred = torch::torch_tensor(rnorm(n))
+      pred = torch::torch_tensor(rnorm(n), dtype=torch::torch_double())
       label = c(1L, -1L, sample(c(-1L, 1L), n-2, replace=TRUE))
       expect_equal(
         torch::as_array(all_pairs_squared_hinge_loss(pred, label)),
@@ -59,7 +59,7 @@ if(torch::torch_is_installed()){
   })
 
   test_that("loss should be equal to naive O(N^2) algorithm with margin zero", {
-    pred = torch::torch_tensor(c(0.5, -0.5, 0.2, -0.2))
+    pred = torch::torch_tensor(c(0.5, -0.5, 0.2, -0.2), dtype=torch::torch_double())
     label = c(1L, 1L, -1L, -1L)
     expect_equal(
       torch::as_array(all_pairs_squared_hinge_loss(pred, label, margin=0)),
@@ -90,10 +90,10 @@ if(torch::torch_is_installed()){
     set.seed(2)
     pred_vals = rnorm(6)
     label = c(1L, -1L, 1L, -1L, 1L, -1L)
-    pred_fast = torch::torch_tensor(pred_vals, requires_grad=TRUE)
+    pred_fast = torch::torch_tensor(pred_vals, dtype=torch::torch_double(), requires_grad=TRUE)
     loss_fast = all_pairs_squared_hinge_loss(pred_fast, label)
     loss_fast$backward()
-    pred_naive = torch::torch_tensor(pred_vals, requires_grad=TRUE)
+    pred_naive = torch::torch_tensor(pred_vals, dtype=torch::torch_double(), requires_grad=TRUE)
     loss_naive = all_pairs_sq_hinge_naive(pred_naive, label)
     loss_naive$backward()
     expect_equal(
