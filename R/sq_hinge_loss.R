@@ -25,9 +25,9 @@ all_pairs_squared_hinge_loss = function(pred, label, margin=1){
   ## Quadratic coefficients: a=1, b=2*z, c=z^2 per positive.
   pos_sorted_d = pos_sorted$to(dtype=torch::torch_double())
   neg_scores_d = neg_scores$to(dtype=torch::torch_double())
-  pos_cumsum1 = torch::torch_cumsum(pos_sorted_d, dim=1)                  #sum of pos scores
-  pos_cumsum2 = torch::torch_cumsum(pos_sorted_d*pos_sorted_d, dim=1)     #sum of pos scores^2
-  ## For each negative, find how many positives have score < neg + margin.
+  pos_cumsum1 = torch::torch_cumsum(pos_sorted_d, dim=1)                  #sum of positive scores
+  pos_cumsum2 = torch::torch_cumsum(pos_sorted_d*pos_sorted_d, dim=1)     #sum of posotive scores^2
+  ## For each negative, find how many positives have score < (neg + margin).
   ## threshold = neg + margin; count = searchsorted result.
   thresholds = neg_scores_d$detach() + margin
   k_idx = torch::torch_searchsorted(
