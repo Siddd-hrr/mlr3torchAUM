@@ -51,5 +51,5 @@ all_pairs_squared_hinge_loss = function(pred, label, margin=1){
   contrib = neg2*k_float +
     neg_scores_d*2*(k_float*margin - sum_pos) +
     (k_float*margin*margin - 2*margin*sum_pos + sum_sq)
-  torch::torch_sum(contrib)
+  torch::torch_sum(contrib)$to(dtype=pred$dtype)
 }
