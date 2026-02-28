@@ -8,18 +8,19 @@ all_pairs_sq_hinge_naive = function(pred, label, margin=1){
   if(length(pos_idx)==0L || length(neg_idx)==0L){
     return(torch::torch_sum(pred*0))
   }
-  total = torch::torch_sum(pred*0)
+  pred_d = pred$to(dtype=torch::torch_double())
+  total = torch::torch_sum(pred_d*0)
   for(j in pos_idx){
     for(k in neg_idx){
-      diff = pred[j] - pred[k]
+      diff = pred_d[j] - pred_d[k]
       hinge = torch::torch_clamp(margin - diff, min=0)
       total = total + hinge*hinge
     }
   }
-  total
+  total$to(dtype=pred$dtype)
 }
 
-if(torch::torch_is_installed()){ 
+if(torch::torch_is_installed()){
 
   test_that("loss is zero when positive is greater than negative by more than margin", {
     pred = torch::torch_tensor(c(2.0, 0.0))
