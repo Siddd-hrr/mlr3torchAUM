@@ -151,8 +151,9 @@ This means we have controlled the randomness:
 Another result computed above is the number of evaluations of the loss function, which we examine in the code below.
 
 ```{r}
+if(torch_available){
 do.call(rbind, lapply(result_list, "[[", "loss"))
-```
+}```
 
 The output above shows that the number of loss function evaluations is 
 
